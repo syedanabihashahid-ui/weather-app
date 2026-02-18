@@ -1,0 +1,116 @@
+/* You can add global styles to this file, and also import other style files */
+html, body {
+    height: 100%;
+    overflow: hidden; /* Prevent scrollbars from interfering */
+}
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+app-root {
+    display: block;
+    height: 100%;
+}
+h1 {
+    text-align: center;
+    color: #333;
+}
+header {
+    background-color: #6884a6;
+    color: rgb(141, 49, 49);
+    padding: 1rem;
+    text-align: center;
+}
+button {
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+}
+button:hover {
+    background-color: #357ab8;
+}
+input {
+    padding: 0.5rem;
+    margin-right: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+input:focus {
+    border-color: #4a90e2;
+    outline: none;
+}
+.weather-info {
+    margin-top: 1rem;
+}
+.weather-info h2 {
+    margin-top: 0;
+}
+.weather-info p {
+    margin-top: 0;
+   
+}
+.detail-view {
+  overflow-x: auto;
+  padding: 20px;
+}
+
+.weather-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.weather-table thead {
+  background: linear-gradient(to right, rgba(111, 177, 252, 0.7), rgba(67, 100, 247, 0.7));
+  color: rgb(3, 10, 39);
+font-weight: bold;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.weather-table th, .weather-table td {
+  text-align: center;
+  padding: 12px;
+  font-family: 'Arial', sans-serif;
+}
+
+.weather-table tbody tr:nth-child(even) {
+  background: rgba(247, 249, 255, 0.15);
+}
+
+.weather-table tbody tr:hover {
+  background: rgba(227, 238, 255, 0.3);
+}
+
+.cell-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.weather-icon {
+  width: 32px;
+  height: 32px;
+}
+
+.temp {
+  font-weight: bold;
+  color: #000505;
+  text-decoration: solid;
+  font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+}
+
+.desc {
+  font-size: 0.9em;
+  color: #010308;
+}
+
+
+  

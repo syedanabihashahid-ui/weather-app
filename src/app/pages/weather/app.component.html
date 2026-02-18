@@ -1,0 +1,214 @@
+<div class="app-wrapper">
+  <!-- Background Video -->
+  <video
+    [src]="backgroundVideo"
+    autoplay
+    muted
+    loop
+    playsinline
+    class="bg-video">
+  </video>
+
+  <!-- Shared Header Section -->
+  <div style="position: relative; max-width: 1000px; margin: 0 auto; padding: 60px 120px 10px; text-align: center; z-index: 10;">
+    <div style="position: absolute; top: 10px; left: 20px; text-align: left; z-index: 20; display: flex; flex-direction: column; line-height: 1;">
+      <h1 style="margin: 0; font-size: 1.6rem; line-height: 1; text-align: left; color: #000; font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;">Weather App</h1>
+      <div class="year-label" style="position: static; margin: 0; font-size: 1.6rem; line-height: 1;">{{ currentYear }}</div>
+    </div>
+    <h2 *ngIf="city" style="margin: 0;">{{ city | titlecase }}</h2>
+
+    <!-- Unit Toggle (Pill Style) -->
+    <div style="position: absolute; right: 32px; top: 50%; transform: translateY(-90%); display: flex; align-items: center; gap: 15px;">
+      <!-- Export CSV (Visible only in Detail View) -->
+      <div *ngIf="selectedTabIndex === 1 && weatherData">
+        <button type="button" class="menu-btn" style="background-color: #e3e6f1e1 !important; color: rgba(16, 1, 1, 0.815) !important; border: none !important; border-radius: 8px; padding: 5px 12px !important; box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-size: 14px !important; font-weight: bold;" (click)="exportToCSV()" title="Export to CSV">Export CSV</button>
+      </div>
+
+      <div class="unit-toggle">
+        <button type="button" [class.active]="isCelsius" (click)="isCelsius = true">°C</button>
+        <button type="button" [class.active]="!isCelsius" (click)="isCelsius = false">°F</button>
+      </div>
+    </div>
+  </div>
+
+  <mat-tab-group mat-align-tabs="center" [(selectedIndex)]="selectedTabIndex">
+
+    <!-- SUMMARY VIEW -->
+    <mat-tab label="Summary View">
+      <div class="weather-app">
+
+        <!-- ===== Search & Autocomplete ===== -->
+        <div class="search">
+          <input
+            type="text"
+            placeholder="Enter city or country"
+            [formControl]="cityControl"
+            [matAutocomplete]="auto"
+            (keyup.enter)="onCityChange(cityControl.value || '')"
+          />
+          <!-- Small Search Loader -->
+          <div *ngIf="isLoading" class="search-loader"></div>
+
+          <mat-autocomplete #auto="matAutocomplete">
+            <mat-option *ngFor="let option of filteredCities | async" [value]="option">
+              {{ option }}
+            </mat-option>
+          </mat-autocomplete>
+
+          <!-- 3 Dots Menu Button -->
+          <button type="button" class="menu-btn history-toggle" (click)="toggleHistory()">&#8942;</button>
+
+          <!-- Search History Dropdown -->
+          <div class="glass-history" *ngIf="showHistory && searchHistory.length > 0">
+            <div class="history-header">
+              <span class="history-title">Search History</span>
+              <button class="clear-btn" (click)="clearHistory()">Clear All</button>
+            </div>
+            <div class="glass-item" *ngFor="let item of searchHistory; let i = index" (click)="onHistorySelect(item.term)">
+              <span class="item-text">{{ item.term | titlecase }}</span>
+              <div class="history-right">
+                <span class="history-date">{{ item.timestamp | date:'d MMM yyyy' }}</span>
+                <span class="history-date">/</span>
+                <span class="history-date">{{ item.timestamp | date:'shortTime' }}</span>
+                <button class="delete-btn" (click)="removeFromHistory($event, i)" title="Remove">&times;</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Error Message ===== -->
+        <div *ngIf="error" class="summary-error-container">
+          <div class="glass-error-card">
+            <div class="error-illustration">🌍</div>
+            <p>Oops! We couldn’t find that location. Check spelling and try again.</p>
+          </div>
+        </div>
+
+        <!-- ===== Weather Summary ===== -->
+        <div *ngIf="weatherData">
+          <div class="container">
+            <!-- Previous Day -->
+            <div class="day-weather" *ngIf="weatherData.previousDay">
+              <h3>Previous Day</h3>
+              <p style="font-weight: bold; margin-top: -5px; margin-bottom: 10px;">{{ weatherData.previousDay.date | date:'EEEE, MMM d' }}</p>
+              <img [src]="getWeatherIcon(weatherData.previousDay.icon)" />
+              <p>{{ weatherData.previousDay.description | titlecase }}</p>
+              <p>Temp: {{ isCelsius ? weatherData.previousDay.temp : weatherData.previousDay.tempF }}°{{ isCelsius ? 'C' : 'F' }}</p>
+              <p>Humidity: {{ weatherData.previousDay.humidity }}%</p>
+              <p>Wind: {{ weatherData.previousDay.windSpeed }} km/h</p>
+            </div>
+
+            <!-- Current Day -->
+            <div class="day-weather" *ngIf="weatherData.currentDay">
+              <h3>Current Day</h3>
+              <p style="font-weight: bold; margin-top: -5px; margin-bottom: 10px;">{{ weatherData.currentDay.date | date:'EEEE, MMM d' }}</p>
+              <img [src]="getWeatherIcon(weatherData.currentDay.icon)" />
+              <p>{{ weatherData.currentDay.description | titlecase }}</p>
+              <p>Temp: {{ isCelsius ? weatherData.currentDay.temp : weatherData.currentDay.tempF }}°{{ isCelsius ? 'C' : 'F' }}</p>
+              <p style="font-size: 0.9rem; opacity: 0.9;">Feels like {{ isCelsius ? weatherData.currentDay.feelsLike : weatherData.currentDay.feelsLikeF }}°{{ isCelsius ? 'C' : 'F' }}</p>
+              <p style="font-weight: bold; color: #131e33ab; font-family: Arial, Helvetica, sans-serif; margin: 5px 0;">{{ weatherData.currentDay.advice }}</p>
+              <p>Humidity: {{ weatherData.currentDay.humidity }}%</p>
+              <p>Wind: {{ weatherData.currentDay.windSpeed }} km/h</p>
+            </div>
+
+            <!-- Next Day (click to show future forecast) -->
+            <div class="day-weather" *ngIf="weatherData.nextDay" (click)="toggleFutureForecast()" style="cursor: pointer;">
+              <h3>Next Day</h3>
+              <p style="font-weight: bold; margin-top: -5px; margin-bottom: 10px;">{{ weatherData.nextDay.date | date:'EEEE, MMM d' }}</p>
+              <img [src]="getWeatherIcon(weatherData.nextDay.icon)" />
+              <p>{{ weatherData.nextDay.description | titlecase }}</p>
+              <p>Temp: {{ isCelsius ? weatherData.nextDay.temp : weatherData.nextDay.tempF }}°{{ isCelsius ? 'C' : 'F' }}</p>
+              <p>Humidity: {{ weatherData.nextDay.humidity }}%</p>
+              <p>Wind: {{ weatherData.nextDay.windSpeed }} km/h</p>
+            </div>
+          </div>
+
+          <!-- Toggle Button -->
+          <div style="text-align: center; margin: 20px 0;">
+            <button type="button" (click)="toggleFutureForecast()">
+              {{ showFutureForecast ? 'Hide 10-Day Forecast' : 'Show 10-Day Forecast' }}
+            </button>
+          </div>
+
+          <!-- Future Days Forecast -->
+          <div class="container future-forecast-container" *ngIf="showFutureForecast">
+            <ng-container *ngFor="let day of weatherData.futureDays">
+              <div class="day-weather" *ngIf="day">
+                <h3>{{ day.date | date:'EEEE, MMM d' }}</h3>
+                <img [src]="getWeatherIcon(day.icon)" />
+                <p>{{ day.description | titlecase }}</p>
+                <p>Temp: {{ isCelsius ? day.temp : day.tempF }}°{{ isCelsius ? 'C' : 'F' }}</p>
+                <p>Humidity: {{ day.humidity }}%</p>
+                <p>Wind: {{ day.windSpeed }} km/h</p>
+                
+                
+              </div>
+              
+            </ng-container>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- DETAIL VIEW -->
+    <mat-tab label="Detail View">
+      <div class="detail-view">
+
+        <!-- Error Message (Detail) -->
+        <div *ngIf="error" class="summary-error-container">
+          <div class="glass-error-card">
+            <div class="error-illustration">🌍</div>
+            <p>Oops! We couldn’t find that location. Check spelling and try again.</p>
+            <button class="retry-btn" (click)="onCityChange(cityControl.value || '')">Retry</button>
+          </div>
+        </div>
+
+        <table class="weather-table" *ngIf="weatherData">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th *ngFor="let day of weekDays">{{ day }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let hour of paginatedHours">
+              <td>{{ hour }}</td>
+              <td *ngFor="let day of weekDays">
+                <ng-container *ngIf="getHourlyWeather(day, hour) as weather; else emptyCell">
+                  <div class="cell-content">
+                    <img [src]="weather.icon" [alt]="weather.description" class="weather-icon" />
+                    <div class="desc">{{ weather.description }}</div>
+                    <div class="temp">{{ isCelsius ? weather.temp : weather.tempF }}°{{ isCelsius ? 'C' : 'F' }}</div>
+                  </div>
+                </ng-container>
+                <ng-template #emptyCell>-</ng-template>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="bottom-controls" *ngIf="weatherData">
+          <div class="page-size-left">
+            <label>
+              Hours per page:
+              <select [(ngModel)]="hoursPerPage" (change)="setPagination()">
+                <option *ngFor="let size of pageSizes" [value]="size">{{ size }}</option>
+              </select>
+            </label>
+          </div>
+          <div class="pagination-buttons-right">
+            <button (click)="prevPage()" [disabled]="currentPage === 0">&lt; Prev</button>
+            <span>Page {{ currentPage + 1 }} / {{ totalPages }}</span>
+            <button (click)="nextPage()" [disabled]="currentPage === totalPages - 1">Next &gt;</button>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+
+  </mat-tab-group>
+
+  <!-- Loading Spinner Overlay -->
+  <div *ngIf="isLoading" class="loader-container">
+    <div class="loader"></div>
+  </div>
+</div>
