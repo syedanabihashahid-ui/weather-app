@@ -1,6 +1,6 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, OnInit, HostListener, Inject, PLATFORM_ID } from '@angular/core';
 import { FormControl, ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { DatePipe, NgFor, NgIf, TitleCasePipe, AsyncPipe } from '@angular/common';
+import { DatePipe, NgFor, NgIf, TitleCasePipe, AsyncPipe, isPlatformBrowser } from '@angular/common';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { WeatherService } from '../../services/weather.service';
@@ -8,7 +8,7 @@ import { forkJoin, of, Observable } from 'rxjs';
 import { startWith, debounceTime, distinctUntilChanged, switchMap, catchError, map } from 'rxjs/operators';
 
 @Component({
-  selector: 'app-root',
+  selector: 'app-weather',
   standalone: true,
   imports: [
     FormsModule,
@@ -119,7 +119,7 @@ import { startWith, debounceTime, distinctUntilChanged, switchMap, catchError, m
     }
   `]
 })
-export class AppComponent implements OnInit {
+export class WeatherComponent implements OnInit {
 
   city: string = '';
   selectedTabIndex: number = 0;
@@ -149,12 +149,14 @@ export class AppComponent implements OnInit {
   paginatedHours: string[] = [];
   pageSizes: number[] = [5, 10, 15];
 
-  constructor(private weatherService: WeatherService) {}
+  constructor(private weatherService: WeatherService, @Inject(PLATFORM_ID) private platformId: Object) {}
 
   ngOnInit(): void {
 
-    this.getCurrentLocation();
-    this.loadSearchHistory();
+    if (isPlatformBrowser(this.platformId)) {
+      this.getCurrentLocation();
+      this.loadSearchHistory();
+    }
 
     this.cityControl.valueChanges.pipe(
       debounceTime(2000),
@@ -183,6 +185,7 @@ export class AppComponent implements OnInit {
   }
 
   loadSearchHistory(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
     const history = localStorage.getItem('weatherSearchHistory');
     if (history) {
       try {
@@ -200,12 +203,16 @@ export class AppComponent implements OnInit {
     const now = Date.now();
     this.searchHistory = this.searchHistory.filter(item => item.term.toLowerCase() !== city.toLowerCase());
     this.searchHistory.unshift({ term: city, timestamp: now });
-    localStorage.setItem('weatherSearchHistory', JSON.stringify(this.searchHistory));
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem('weatherSearchHistory', JSON.stringify(this.searchHistory));
+    }
   }
 
   clearHistory(): void {
     this.searchHistory = [];
-    localStorage.removeItem('weatherSearchHistory');
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.removeItem('weatherSearchHistory');
+    }
   }
 
   toggleTemperature(): void {
@@ -228,10 +235,13 @@ export class AppComponent implements OnInit {
   removeFromHistory(event: Event, index: number): void {
     event.stopPropagation();
     this.searchHistory.splice(index, 1);
-    localStorage.setItem('weatherSearchHistory', JSON.stringify(this.searchHistory));
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem('weatherSearchHistory', JSON.stringify(this.searchHistory));
+    }
   }
 
   getCurrentLocation(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
     if (!navigator.geolocation) {
       this.error = 'Geolocation not supported';
       return;
@@ -306,7 +316,7 @@ export class AppComponent implements OnInit {
 
   private setWeatherData(forecast: any, history: any) {
     this.city = forecast.location?.name || '';
-    this.cityControl.setValue(this.city);
+    this.cityControl.setValue(this.city, { emitEvent: false });
     this.weatherDataRaw = forecast;
     this.weatherData = this.processWeatherData(forecast, history);
     this.buildHourlyTable();
@@ -325,7 +335,6 @@ export class AppComponent implements OnInit {
     const forecastDays = [...data.forecast.forecastday];
 
     // Debug: Check how many days the API is actually returning
-    console.log('Forecast days returned:', forecastDays.length);
 
     // FIX: If API returns fewer days (e.g. Free tier limit is 3), 
     // generate mock data so the UI shows 10 future days.
@@ -521,6 +530,7 @@ export class AppComponent implements OnInit {
   }
 
   exportToCSV(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
     if (!this.weatherData) return;
 
     const headers = ['Date', 'City', 'Description', 'Temp (C)', 'Temp (F)', 'Humidity (%)', 'Wind Speed (km/h)'];
@@ -563,6 +573,7 @@ export class AppComponent implements OnInit {
   }
 
   onFileSelected(event: Event): void {
+    if (!isPlatformBrowser(this.platformId)) return;
     const input = event.target as HTMLInputElement;
     if (!input.files?.length) return;
 
@@ -662,6 +673,7 @@ export class AppComponent implements OnInit {
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: Event): void {
+    if (!isPlatformBrowser(this.platformId)) return;
     if (this.showHistory) {
       const target = event.target as HTMLElement;
       if (!target.closest('.glass-history') && !target.closest('.history-toggle')) {

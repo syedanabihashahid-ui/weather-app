@@ -1,15 +1,11 @@
-
 import { NgModule } from '@angular/core';
-import { Routes, RouterModule, ExtraOptions } from '@angular/router';
-import { AppComponent } from './pages/weather/app.component';
+import { Routes, RouterModule } from '@angular/router';
+import { WeatherComponent } from './pages/weather/app.component';
 
-const routeOption: ExtraOptions = {
-  useHash: true
-}
 export const routes: Routes = [
   {
     path: 'weather',
-    component: AppComponent,
+    component: WeatherComponent,
   },
   {
     path: '',
@@ -19,9 +15,7 @@ export const routes: Routes = [
 ];
 
 @NgModule({
-  imports: [RouterModule.forRoot(routes, routeOption)],
+  imports: [RouterModule.forRoot(routes)],
   exports: [RouterModule]
 })
 export class AppRoutingModule { }
-
-
